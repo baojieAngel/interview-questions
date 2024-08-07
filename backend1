@@ -1,0 +1,107 @@
+public class ObjectUtil {
+
+  public static void copyProperties(Object source, Object target, String[] properties) {
+    // TODO: Implement this method
+
+    # 当properties参数为空数组时，throw java.security.InvalidParameterException 异常。
+     if (properties == null || properties.length == 0) {
+            throw new InvalidParameterException("Properties array cannot be empty.");
+        }
+
+    # source和target Object 可能是不同类型的class，但他们存在同名同类型的属性，就能进行拷贝。
+      try {
+            IdentityHashMap<Object, Object> visited = new IdentityHashMap<>();
+            # 使用反射获取 source 和 target 对象的属性
+            for (String property : properties) {
+                Field sourceField = getField(source.getClass(), property);
+                Field targetField = getField(target.getClass(), property);
+                # 如果对象值为空，则抛出not found
+                if (sourceField == null || targetField == null) {
+                    throw new RuntimeException("Field " + property + " not found in either source or target.");
+                }
+                # 如果对象不相等，则抛出type error
+                if (!sourceField.getType().equals(targetField.getType())) {
+                    throw new RuntimeException("Field " + property + " has mismatched types.");
+                }
+                # 设置可访问私有属性值
+                sourceField.setAccessible(true);
+                targetField.setAccessible(true);
+
+                Object value = sourceField.get(source);
+                Object copiedValue = deepCopy(value, visited);
+                targetField.set(target, copiedValue);
+            }
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Failed to copy properties", e);
+        }
+        /**
+        * 用于获取类的字段，包括从父类继承的字段
+        */
+  private static Field getField(Class<?> clazz, String fieldName) {
+          try {
+              return clazz.getDeclaredField(fieldName);
+              } catch (NoSuchFieldException e) {
+              if (clazz.getSuperclass() != null) {
+                  return getField(clazz.getSuperclass(), fieldName);
+               }
+              return null;
+          }
+       }
+
+        /**
+        * 会递归地深拷贝对象，包括数组和对象类型
+        */
+  private static Object deepCopy(Object source, Map<Object, Object> visited) throws IllegalAccessException {
+        if (source == null || isPrimitiveOrWrapper(source.getClass())) {
+            return source;
+        }
+
+        if (visited.containsKey(source)) {
+            return visited.get(source);
+        }
+
+        if (source.getClass().isArray()) {
+            int length = java.lang.reflect.Array.getLength(source);
+            Object copy = java.lang.reflect.Array.newInstance(source.getClass().getComponentType(), length);
+            visited.put(source, copy);
+            for (int i = 0; i < length; i++) {
+                java.lang.reflect.Array.set(copy, i, deepCopy(java.lang.reflect.Array.get(source, i), visited));
+            }
+            return copy;
+        } else {
+            Object copy = null;
+            try {
+                copy = source.getClass().newInstance();
+            } catch (InstantiationException e) {
+                throw new RuntimeException("Cannot instantiate object of type " + source.getClass().getName());
+            }
+            visited.put(source, copy);
+
+            for (Field field : source.getClass().getDeclaredFields()) {
+                field.setAccessible(true);
+                Object fieldValue = field.get(source);
+                field.set(copy, deepCopy(fieldValue, visited));
+            }
+
+            return copy;
+        }
+    }
+        /**
+        * 用来判断一个对象是否为基本类型或其包装类型
+        */
+    private static boolean isPrimitiveOrWrapper(Class<?> clazz) {
+        return clazz.isPrimitive() ||
+               clazz.equals(Boolean.class) ||
+               clazz.equals(Byte.class) ||
+               clazz.equals(Character.class) ||
+               clazz.equals(Double.class) ||
+               clazz.equals(Float.class) ||
+               clazz.equals(Integer.class) ||
+               clazz.equals(Long.class) ||
+               clazz.equals(Short.class) ||
+               clazz.equals(String.class);
+    }
+}
+    }
+  }
+}
