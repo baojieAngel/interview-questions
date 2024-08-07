@@ -3,12 +3,12 @@ public class ObjectUtil {
   public static void copyProperties(Object source, Object target, String[] properties) {
     // TODO: Implement this method
 
-    # 当properties参数为空数组时，throw java.security.InvalidParameterException 异常。
+    # 1.当properties参数为空数组时，throw java.security.InvalidParameterException 异常。
      if (properties == null || properties.length == 0) {
             throw new InvalidParameterException("Properties array cannot be empty.");
         }
 
-    # source和target Object 可能是不同类型的class，但他们存在同名同类型的属性，就能进行拷贝。
+    # 2.source和target Object 可能是不同类型的class，但他们存在同名同类型的属性，就能进行拷贝。
       try {
             IdentityHashMap<Object, Object> visited = new IdentityHashMap<>();
             # 使用反射获取 source 和 target 对象的属性
@@ -31,7 +31,9 @@ public class ObjectUtil {
                 Object copiedValue = deepCopy(value, visited);
                 targetField.set(target, copiedValue);
             }
-        } catch (IllegalAccessException e) {
+        } 
+      # 3.当properties参数中的属性，在source和target中同名但类型不一致时，throw RuntimeException 异常
+      catch (IllegalAccessException e) {
             throw new RuntimeException("Failed to copy properties", e);
         }
         /**
